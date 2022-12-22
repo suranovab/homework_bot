@@ -52,6 +52,7 @@ def check_tokens():
 def send_message(bot, message):
     """Фукция отправляет сообщение в Telegram чат."""
     try:
+        logging.debug('Отправка сообщения в Telegram.')
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.debug('Сообщение в Telegram успешно отправлено.')
     except Exception as error:
@@ -97,12 +98,11 @@ def check_response(response):
             'Ключ homeworks в ответе API отсутствует'
         )
     homeworks = response.get('homeworks')
-    if isinstance(homeworks, list):
-        return homeworks
-    else:
+    if not isinstance(homeworks, list):
         raise TypeError(
             'В ответе API под ключом homeworks данные не являются списком'
         )
+    return homeworks
 
 
 def parse_status(homework):
@@ -113,11 +113,9 @@ def parse_status(homework):
         raise KeyError(
             'Ключ homework_name в ответе API отсутствует'
         )
-    if homework_status in HOMEWORK_VERDICTS:
-        verdict = HOMEWORK_VERDICTS.get(homework_status)
-        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
-    else:
+    if homework_status not in HOMEWORK_VERDICTS:
         raise exceptions.UnknownHomeworkStatus
+    verdict = HOMEWORK_VERDICTS.get(homework_status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -125,17 +123,15 @@ def main():
     """Основная логика работы бота."""
     if check_tokens():
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        timestamp = int(time.time()) - 2629743
+        timestamp = int(time.time()) - 604800
 
         while True:
             try:
                 response = get_api_answer(timestamp)
                 homeworks = check_response(response)
-                quantity_of_works = len(homeworks)
-                while quantity_of_works > 0:
-                    message = parse_status(homeworks[quantity_of_works - 1])
+                for homework in homeworks:
+                    message = parse_status(homework)
                     send_message(bot, message)
-                    quantity_of_works -= 1
                 timestamp = int(time.time())
                 time.sleep(RETRY_PERIOD)
 
