@@ -38,11 +38,7 @@ logging.basicConfig(
 
 def check_tokens():
     """Функция проверки наличия переменных окружения."""
-    tokens = {
-        'practicum_token': PRACTICUM_TOKEN,
-        'telegram_token': TELEGRAM_TOKEN,
-        'telegram_chat_id': TELEGRAM_CHAT_ID,
-    }
+    tokens = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
     return all(tokens)
 
 
