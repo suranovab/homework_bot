@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 import requests
 from http import HTTPStatus
@@ -42,9 +43,6 @@ def check_tokens():
     }
     for key, value in tokens.items():
         if value is None:
-            logging.critical(
-                f'Отсутствует обязательная переменная окружения: {key}'
-            )
             return False
     return True
 
@@ -121,24 +119,26 @@ def parse_status(homework):
 
 def main():
     """Основная логика работы бота."""
-    if check_tokens():
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        timestamp = int(time.time()) - 604800
+    if not check_tokens():
+        logging.critical('Отсутствуют обязательные переменные окружения')
+        sys.exit('Отсутствуют обязательные переменные окружения')
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    timestamp = int(time.time()) - 604800
 
-        while True:
-            try:
-                response = get_api_answer(timestamp)
-                homeworks = check_response(response)
-                for homework in homeworks:
-                    message = parse_status(homework)
-                    send_message(bot, message)
-                timestamp = int(time.time())
-                time.sleep(RETRY_PERIOD)
-
-            except Exception as error:
-                message = f'Сбой в работе программы: {error}'
+    while True:
+        try:
+            response = get_api_answer(timestamp)
+            homeworks = check_response(response)
+            for homework in homeworks:
+                message = parse_status(homework)
                 send_message(bot, message)
-                time.sleep(RETRY_PERIOD)
+            timestamp = int(time.time())
+            time.sleep(RETRY_PERIOD)
+
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            send_message(bot, message)
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
