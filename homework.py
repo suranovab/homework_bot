@@ -27,6 +27,8 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
+MISSING_TOKENS = 'Отсутствуют обязательные переменные окружения'
+
 logging.basicConfig(
     level=logging.DEBUG,
     filename='main.log',
@@ -41,10 +43,7 @@ def check_tokens():
         'telegram_token': TELEGRAM_TOKEN,
         'telegram_chat_id': TELEGRAM_CHAT_ID,
     }
-    for key, value in tokens.items():
-        if value is None:
-            return False
-    return True
+    return all(tokens)
 
 
 def send_message(bot, message):
@@ -120,8 +119,8 @@ def parse_status(homework):
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
-        logging.critical('Отсутствуют обязательные переменные окружения')
-        sys.exit('Отсутствуют обязательные переменные окружения')
+        logging.critical(MISSING_TOKENS)
+        sys.exit(MISSING_TOKENS)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time()) - 604800
 
